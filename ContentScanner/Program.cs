@@ -66,15 +66,6 @@ namespace ContentScanner
 
                 Console.WriteLine(file);
             }
-
-            // for each file, write name, path, and size
-           /* foreach (string file in files)
-            {
-                
-            }*/
-
-
-            // for each subdirectory, recurse
         }
     }
 }
