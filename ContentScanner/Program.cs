@@ -9,7 +9,7 @@ namespace ContentScanner
 {
     class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             Console.WriteLine("Content Scanner v0.1");
             Console.WriteLine("Press any key to start the scan");
@@ -20,11 +20,13 @@ namespace ContentScanner
             {
                 //get current directory
                 string path = Directory.GetCurrentDirectory();
+
+                // use for testing
                 // string path = @"C:\Users\Eugene\Desktop\beats";
 
-                string filename = "ContentScanResults.txt";
+                string output_filename = "ContentScanResults.txt";
 
-                string file = path + @"\" + filename;
+                string file = path + @"\" + output_filename;
 
                 using (StreamWriter sw = File.CreateText(file))
                 {
