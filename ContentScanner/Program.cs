@@ -46,6 +46,8 @@ namespace ContentScanner
 
         static void Scanner(StreamWriter sw, string current_dir)
         {
+            sw.WriteLine("Folder\t-\t{0}\t-", current_dir);
+
             // get all subdirectories in current path
             string[] dirs = Directory.GetDirectories(current_dir, "*", SearchOption.TopDirectoryOnly);
             foreach (string dir in dirs)
@@ -63,7 +65,7 @@ namespace ContentScanner
                     string filesize = format_filesize(filesize_bytes);
                     string mime_type = MIMEAssistant.GetMIMEType(file);
 
-                    //write attributes to file
+                    //write attributes to putput file
                     sw.WriteLine("{0}\t\t{1}\t{2}\t{3}", filename, mime_type, current_dir, filesize);
                 }
 
