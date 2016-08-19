@@ -35,27 +35,31 @@ namespace ContentScanner
             output.WriteLine("Filename\tMIME Type\tPath\tSize");
             errors.WriteLine("dir\terror");
 
+            Console.WriteLine("Starting object count...");
             int progress_total = GetProgressTotal(errors, path);
+            Console.WriteLine("Done.");
             int progress = 0;
 
-            var progress_bar = new ProgressBar();
-            
             try
             {
+                Console.WriteLine("Starting scan...");
+                var progress_bar = new ProgressBar();
+
                 Scanner(output, errors, path, progress_total, progress, progress_bar);
+
+                progress_bar.Dispose();
+
+                Console.WriteLine("Scan complete. {0} objects processed.", progress_total);
+                Console.WriteLine("Press any key to exit.");
+
+                Console.Read();
             }
             catch (Exception e)
             {
                 Console.WriteLine("The process failed: {0}", e.ToString());
+                Console.WriteLine("Press any key to exit.");
                 Console.ReadKey();
             }
-
-            progress_bar.Dispose();
-
-            Console.WriteLine("Scan complete. {0} objects processed.", progress_total);
-            Console.WriteLine("Press any key to exit.");
-
-            Console.Read();
         }
 
         static void Scanner(StreamWriter output, StreamWriter errors, string current_dir, int progress_total, int progress, ProgressBar progress_bar)
@@ -117,6 +121,7 @@ namespace ContentScanner
         
         static int GetProgressTotal(StreamWriter errors, string path)
         {
+            
             try // get file totals for progress bar
             {
                 int total_files = Directory.GetFiles(path, "*", SearchOption.TopDirectoryOnly).Length;
@@ -135,7 +140,7 @@ namespace ContentScanner
             {
                 //Console.WriteLine("Progress bar encountered an error: {0}", e.ToString());
                 errors.WriteLine("FileCounter\t{0}", e.ToString());
-
+                Console.WriteLine("Unable to access: {0}", path);
                 return 1;
             }
         }
