@@ -3,6 +3,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ContentScanner
@@ -11,65 +12,131 @@ namespace ContentScanner
     {
         static void Main()
         {
-            Console.WriteLine("Content Scanner v0.1");
+            Console.WriteLine("Content Scanner v0.2");
             Console.WriteLine("Press any key to start the scan");
 
             Console.ReadKey();
 
+            //get current directory
+            string path = Directory.GetCurrentDirectory();
+
+            // use for testing
+            // string path = @"C:\Users\Eugene\Desktop\beats";
+
+            string output_filename = "content-scan-results.txt";
+            string output_file = path + @"\" + output_filename;
+
+            string error_filename = "content-scan-errors.txt";
+            string error_file = path + @"\" + error_filename;
+
+            StreamWriter output = File.CreateText(output_file);
+            StreamWriter errors = File.CreateText(error_file);
+            
+            output.WriteLine("Filename\tMIME Type\tPath\tSize");
+            errors.WriteLine("dir\terror");
+
+            int progress_total = GetProgressTotal(errors, path);
+            int progress = 0;
+
+            var progress_bar = new ProgressBar();
+            
             try
             {
-                //get current directory
-                string path = Directory.GetCurrentDirectory();
-
-                // use for testing
-                // string path = @"C:\Users\Eugene\Desktop\beats";
-
-                string output_filename = "ContentScanResults.txt";
-
-                string file = path + @"\" + output_filename;
-
-                using (StreamWriter sw = File.CreateText(file))
-                {
-                    sw.WriteLine("Filename\tMIME Type\tPath\tSize");
-                    Scanner(sw, path);
-                }
-
-                Console.WriteLine("Scan complete");
-                Console.ReadKey();
+                Scanner(output, errors, path, progress_total, progress, progress_bar);
             }
             catch (Exception e)
             {
                 Console.WriteLine("The process failed: {0}", e.ToString());
                 Console.ReadKey();
             }
+
+            progress_bar.Dispose();
+
+            Console.WriteLine("Scan complete. {0} objects processed.", progress_total);
+            Console.WriteLine("Press any key to exit.");
+
+            Console.Read();
         }
 
-        static void Scanner(StreamWriter sw, string current_dir)
+        static void Scanner(StreamWriter output, StreamWriter errors, string current_dir, int progress_total, int progress, ProgressBar progress_bar)
         {
-            sw.WriteLine("Folder\t-\t{0}\t-", current_dir);
+            // write dir name
+            output.WriteLine("Folder\t-\t{0}\t-", current_dir);
 
-            // get all subdirectories in current path
-            string[] dirs = Directory.GetDirectories(current_dir, "*", SearchOption.TopDirectoryOnly);
-            foreach (string dir in dirs)
+            // get files
+            string[] files = Directory.GetFiles(current_dir, "*", SearchOption.TopDirectoryOnly);
+
+            // write files in dir
+            foreach (string file in files)
             {
-                sw.WriteLine("Folder\t-\t{0}\t-", dir);
-
-                // get all files
-                string[] files = Directory.GetFiles(dir, "*", SearchOption.TopDirectoryOnly);
-                
-                foreach (string file in files)
+                try // check for errors, output to error file if any
                 {
+                    progress++;
+                    progress_bar.Report((double) progress / progress_total);
+
+
                     // get file attributes
                     string filename = Path.GetFileName(file);
                     long filesize_bytes = new System.IO.FileInfo(file).Length;
-                    string filesize = format_filesize(filesize_bytes);
+                    //string filesize = format_filesize(filesize_bytes);
                     string mime_type = MIMEAssistant.GetMIMEType(file);
 
                     //write attributes to putput file
-                    sw.WriteLine("{0}\t\t{1}\t{2}\t{3}", filename, mime_type, current_dir, filesize);
+                    output.WriteLine("{0}\t\t{1}\t{2}\t{3}", filename, mime_type, current_dir, filesize_bytes);
+                }
+                catch (Exception e)
+                {
+                    progress++;
+                    progress_bar.Report((double) progress / progress_total);
+
+                    errors.WriteLine("{0}\t{1}", current_dir, e.ToString());
+                }
+            }
+
+            // get subdirs
+            string[] dirs = Directory.GetDirectories(current_dir, "*", SearchOption.TopDirectoryOnly);
+            foreach (string dir in dirs)
+            {
+                try // check for errors, output to error file if any
+                {
+                    progress++;
+                    progress_bar.Report((double) progress / progress_total);
+
+                    // recurse!
+                    Scanner(output, errors, dir, progress_total, progress, progress_bar);
+                }
+                catch (Exception e)
+                {
+                    progress++;
+                    progress_bar.Report((double) progress / progress_total);
+
+                    errors.WriteLine("{0}\t{1}", dir, e.ToString());
+                }
+            }
+        }
+        
+        static int GetProgressTotal(StreamWriter errors, string path)
+        {
+            try // get file totals for progress bar
+            {
+                int total_files = Directory.GetFiles(path, "*", SearchOption.TopDirectoryOnly).Length;
+                string[] dirs = Directory.GetDirectories(path, "*", SearchOption.TopDirectoryOnly);
+
+                int total_dirs = dirs.Length;
+
+                foreach (string dir in dirs)
+                {
+                    total_dirs = total_dirs + GetProgressTotal(errors, dir);
                 }
 
-                Scanner(sw, dir);
+                return total_dirs + total_files;
+            }
+            catch (Exception e)
+            {
+                //Console.WriteLine("Progress bar encountered an error: {0}", e.ToString());
+                errors.WriteLine("FileCounter\t{0}", e.ToString());
+
+                return 1;
             }
         }
 
@@ -95,6 +162,105 @@ namespace ContentScanner
 
             return ">1TB";
         } 
+    }
+
+    /// <summary>
+    /// An ASCII progress bar
+    /// </summary>
+    public class ProgressBar : IDisposable, IProgress<double>
+    {
+        private const int blockCount = 10;
+        private readonly TimeSpan animationInterval = TimeSpan.FromSeconds(1.0 / 8);
+        private const string animation = @"|/-\";
+
+        private readonly Timer timer;
+
+        private double currentProgress = 0;
+        private string currentText = string.Empty;
+        private bool disposed = false;
+        private int animationIndex = 0;
+
+        public ProgressBar()
+        {
+            timer = new Timer(TimerHandler);
+
+            // A progress bar is only for temporary display in a console window.
+            // If the console output is redirected to a file, draw nothing.
+            // Otherwise, we'll end up with a lot of garbage in the target file.
+            if (!Console.IsOutputRedirected)
+            {
+                ResetTimer();
+            }
+        }
+
+        public void Report(double value)
+        {
+            // Make sure value is in [0..1] range
+            value = Math.Max(0, Math.Min(1, value));
+            Interlocked.Exchange(ref currentProgress, value);
+        }
+
+        private void TimerHandler(object state)
+        {
+            lock (timer)
+            {
+                if (disposed) return;
+
+                int progressBlockCount = (int)(currentProgress * blockCount);
+                int percent = (int)(currentProgress * 100);
+                string text = string.Format("[{0}{1}] {2,3}% {3}",
+                    new string('#', progressBlockCount), new string('-', blockCount - progressBlockCount),
+                    percent,
+                    animation[animationIndex++ % animation.Length]);
+                UpdateText(text);
+
+                ResetTimer();
+            }
+        }
+
+        private void UpdateText(string text)
+        {
+            // Get length of common portion
+            int commonPrefixLength = 0;
+            int commonLength = Math.Min(currentText.Length, text.Length);
+            while (commonPrefixLength < commonLength && text[commonPrefixLength] == currentText[commonPrefixLength])
+            {
+                commonPrefixLength++;
+            }
+
+            // Backtrack to the first differing character
+            StringBuilder outputBuilder = new StringBuilder();
+            outputBuilder.Append('\b', currentText.Length - commonPrefixLength);
+
+            // Output new suffix
+            outputBuilder.Append(text.Substring(commonPrefixLength));
+
+            // If the new text is shorter than the old one: delete overlapping characters
+            int overlapCount = currentText.Length - text.Length;
+            if (overlapCount > 0)
+            {
+                outputBuilder.Append(' ', overlapCount);
+                outputBuilder.Append('\b', overlapCount);
+            }
+
+            Console.Write(outputBuilder);
+            currentText = text;
+        }
+
+        private void ResetTimer()
+        {
+            timer.Change(animationInterval, TimeSpan.FromMilliseconds(-1));
+        }
+
+        public void Dispose()
+        {
+            lock (timer)
+            {
+                disposed = true;
+                UpdateText(string.Empty);
+            }
+        }
+
     }
 
     public static class MIMEAssistant
