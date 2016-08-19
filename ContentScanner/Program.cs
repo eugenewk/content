@@ -12,8 +12,8 @@ namespace ContentScanner
     {
         static void Main()
         {
-            Console.WriteLine("Content Scanner v0.2");
-            Console.WriteLine("Press any key to start the scan");
+            Console.WriteLine("Content Scanner v0.3");
+            Console.WriteLine("Press any key to start the scan\n");
 
             Console.ReadKey();
 
@@ -35,9 +35,9 @@ namespace ContentScanner
             output.WriteLine("Filename\tMIME Type\tPath\tSize\tLast Modified");
             errors.WriteLine("dir\terror");
 
-            Console.WriteLine("Starting object count...");
+            Console.WriteLine("Starting object count...\n");
             int progress_total = GetProgressTotal(errors, path);
-            Console.WriteLine("Done.");
+            Console.WriteLine("\nObject count complete: {0} total objects.\n", progress_total);
             int progress = 0;
 
             try
