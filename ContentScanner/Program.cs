@@ -32,7 +32,7 @@ namespace ContentScanner
             StreamWriter output = File.CreateText(output_file);
             StreamWriter errors = File.CreateText(error_file);
             
-            output.WriteLine("Filename\tMIME Type\tPath\tSize");
+            output.WriteLine("Filename\tMIME Type\tPath\tSize\tLast Modified");
             errors.WriteLine("dir\terror");
 
             Console.WriteLine("Starting object count...");
@@ -45,7 +45,7 @@ namespace ContentScanner
                 Console.WriteLine("Starting scan...");
                 var progress_bar = new ProgressBar();
 
-                Scanner(output, errors, path, progress_total, progress, progress_bar);
+                Scanner(output, errors, path, progress_total, ref progress, progress_bar);
 
                 progress_bar.Dispose();
 
@@ -62,10 +62,10 @@ namespace ContentScanner
             }
         }
 
-        static void Scanner(StreamWriter output, StreamWriter errors, string current_dir, int progress_total, int progress, ProgressBar progress_bar)
+        static void Scanner(StreamWriter output, StreamWriter errors, string current_dir, int progress_total, ref int progress, ProgressBar progress_bar)
         {
             // write dir name
-            output.WriteLine("Folder\t-\t{0}\t-", current_dir);
+            output.WriteLine("Folder\t-\t{0}\t-\t-", current_dir);
 
             // get files
             string[] files = Directory.GetFiles(current_dir, "*", SearchOption.TopDirectoryOnly);
@@ -82,11 +82,12 @@ namespace ContentScanner
                     // get file attributes
                     string filename = Path.GetFileName(file);
                     long filesize_bytes = new System.IO.FileInfo(file).Length;
-                    //string filesize = format_filesize(filesize_bytes);
+                    DateTime last_modified = System.IO.File.GetLastWriteTime(file);
+                    //string filesize = format_filesize(filesize_bytes); // probably better to leave in bytes for crunching purposes
                     string mime_type = MIMEAssistant.GetMIMEType(file);
 
                     //write attributes to putput file
-                    output.WriteLine("{0}\t\t{1}\t{2}\t{3}", filename, mime_type, current_dir, filesize_bytes);
+                    output.WriteLine("{0}\t\t{1}\t{2}\t{3}\t{4}", filename, mime_type, current_dir, filesize_bytes, last_modified.ToShortDateString());
                 }
                 catch (Exception e)
                 {
@@ -107,7 +108,7 @@ namespace ContentScanner
                     progress_bar.Report((double) progress / progress_total);
 
                     // recurse!
-                    Scanner(output, errors, dir, progress_total, progress, progress_bar);
+                    Scanner(output, errors, dir, progress_total, ref progress, progress_bar);
                 }
                 catch (Exception e)
                 {
@@ -140,7 +141,7 @@ namespace ContentScanner
             {
                 //Console.WriteLine("Progress bar encountered an error: {0}", e.ToString());
                 errors.WriteLine("FileCounter\t{0}", e.ToString());
-                Console.WriteLine("Unable to access: {0}", path);
+                Console.WriteLine("Unable to access {0}", path);
                 return 1;
             }
         }
