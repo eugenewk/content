@@ -29,19 +29,19 @@ namespace ContentScanner
             string error_filename = "content-scan-errors.txt";
             string error_file = path + @"\" + error_filename;
 
-            StreamWriter output = File.CreateText(output_file);
-            StreamWriter errors = File.CreateText(error_file);
-            
-            output.WriteLine("Filename\tMIME Type\tPath\tSize\tLast Modified");
-            errors.WriteLine("dir\terror");
-
-            Console.WriteLine("Starting object count...\n");
-            int progress_total = GetProgressTotal(errors, path);
-            Console.WriteLine("\nObject count complete: {0} total objects.\n", progress_total);
-            int progress = 0;
-
             try
             {
+                StreamWriter output = File.CreateText(output_file);
+                StreamWriter errors = File.CreateText(error_file);
+
+                output.WriteLine("Filename\tMIME Type\tPath\tSize\tLast Modified");
+                errors.WriteLine("dir\terror");
+
+                Console.WriteLine("Starting object count...\n");
+                int progress_total = GetProgressTotal(errors, path);
+                Console.WriteLine("\nObject count complete: {0} total objects.\n", progress_total);
+                int progress = 0;
+
                 Console.WriteLine("Starting scan...");
                 var progress_bar = new ProgressBar();
 
