@@ -54,7 +54,7 @@ namespace ContentScanner
 
                 Console.Read();
 
-                // clean up streamwriters. If these don't work it can cut off the data set. 
+                // clean up streamwriters. If these aren't here the last few lines tend to get cut off. 
                 output.Flush();
                 output.Close();
 
@@ -131,6 +131,8 @@ namespace ContentScanner
 
             // get subdirs
             string[] dirs = Directory.GetDirectories(current_dir, "*", SearchOption.TopDirectoryOnly);
+
+            // recurse for each subdir
             foreach (string dir in dirs)
             {
                 try // check for errors, output to error file if any
@@ -203,6 +205,7 @@ namespace ContentScanner
 
     /// <summary>
     /// An ASCII progress bar
+    /// source: somewhere on stack overflow. Can't find the original comment with this code.
     /// </summary>
     public class ProgressBar : IDisposable, IProgress<double>
     {
@@ -300,6 +303,10 @@ namespace ContentScanner
 
     }
 
+    /// <summary>
+    /// class to help get MIME types of files based on their file extensions
+    /// source: Stack overflow comment by Jalal Aldeen Saa'd (http://stackoverflow.com/questions/58510/using-net-how-can-you-find-the-mime-type-of-a-file-based-on-the-file-signature)
+    /// </summary>
     public static class MIMEAssistant
     {
         private static readonly Dictionary<string, string> MIMETypesDictionary = new Dictionary<string, string>
