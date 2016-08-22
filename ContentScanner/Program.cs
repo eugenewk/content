@@ -54,9 +54,20 @@ namespace ContentScanner
 
                 Console.Read();
             }
+            catch (UnauthorizedAccessException uae)
+            {
+                Console.WriteLine("Insufficient permissions to write output files in this directory.\nTerminating scan.\n");
+                Console.Write("Press e to see the error details. Press any other key to exit: ");
+
+                if (Console.ReadKey().KeyChar == 'e')
+                {
+                    Console.WriteLine("\n" + uae.ToString());
+                    Console.ReadKey();
+                }
+            }
             catch (Exception e)
             {
-                Console.WriteLine("The process failed: {0}", e.ToString());
+                Console.WriteLine("The process failed: {0}\n", e.ToString());
                 Console.WriteLine("Press any key to exit.");
                 Console.ReadKey();
             }
