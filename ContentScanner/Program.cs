@@ -12,7 +12,7 @@ namespace ContentScanner
     {
         static void Main()
         {
-            Console.WriteLine("Content Scanner v0.3");
+            Console.WriteLine("Content Scanner v0.4");
             Console.WriteLine("Press any key to start the scan\n");
 
             Console.ReadKey();
@@ -34,7 +34,7 @@ namespace ContentScanner
                 StreamWriter output = File.CreateText(output_file);
                 StreamWriter errors = File.CreateText(error_file);
 
-                output.WriteLine("Filename\tMIME Type\tPath\tSize\tLast Modified");
+                output.WriteLine("Filename\tMIME Type\tPath\tSize\tLast Modified\tLast Accessed\tCreate Date\tOwner Account");
                 errors.WriteLine("dir\terror");
 
                 Console.WriteLine("Starting object count...\n");
@@ -53,6 +53,13 @@ namespace ContentScanner
                 Console.WriteLine("Press any key to exit.");
 
                 Console.Read();
+
+                // clean up streamwriters. If these don't work it can cut off the data set. 
+                output.Flush();
+                output.Close();
+
+                errors.Flush();
+                errors.Close();
             }
             catch (UnauthorizedAccessException uae)
             {
@@ -89,16 +96,29 @@ namespace ContentScanner
                     progress++;
                     progress_bar.Report((double) progress / progress_total);
 
-
                     // get file attributes
+
+                    // name / size
                     string filename = Path.GetFileName(file);
                     long filesize_bytes = new System.IO.FileInfo(file).Length;
-                    DateTime last_modified = System.IO.File.GetLastWriteTime(file);
                     //string filesize = format_filesize(filesize_bytes); // probably better to leave in bytes for crunching purposes
+
+                    // owner account (as string)
+                    var owner = System.IO.File.GetAccessControl(file).GetOwner(typeof(System.Security.Principal.SecurityIdentifier));
+                    string owner_account = owner.Translate(typeof(System.Security.Principal.NTAccount)).ToString();
+
+                    // create date, last modified, last accessed
+                    DateTime last_modified = System.IO.File.GetLastWriteTime(file);
+                    DateTime last_accessed = System.IO.File.GetLastAccessTime(file); // new
+                    DateTime create_date = System.IO.File.GetCreationTime(file); // new
+
+                    // MIME type
                     string mime_type = MIMEAssistant.GetMIMEType(file);
 
-                    //write attributes to putput file
-                    output.WriteLine("{0}\t\t{1}\t{2}\t{3}\t{4}", filename, mime_type, current_dir, filesize_bytes, last_modified.ToShortDateString());
+                    //"Filename\tMIME Type\tPath\tSize\tLast Modified\tLast Accessed\tCreate Date\tOwner Account"
+
+                    // write attributes to putput file
+                    output.WriteLine("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}", filename, mime_type, current_dir, filesize_bytes, last_modified.ToShortDateString(), last_accessed.ToShortDateString(), create_date.ToShortDateString(), owner_account);
                 }
                 catch (Exception e)
                 {
