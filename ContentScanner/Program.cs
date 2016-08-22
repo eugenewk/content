@@ -83,7 +83,7 @@ namespace ContentScanner
         static void Scanner(StreamWriter output, StreamWriter errors, string current_dir, int progress_total, ref int progress, ProgressBar progress_bar)
         {
             // write dir name
-            output.WriteLine("Folder\t-\t{0}\t-\t-", current_dir);
+            output.WriteLine("Folder\t-\t{0}\t-\t-\t-\t-\t-", current_dir);
 
             // get files
             string[] files = Directory.GetFiles(current_dir, "*", SearchOption.TopDirectoryOnly);
@@ -179,7 +179,7 @@ namespace ContentScanner
             }
         }
 
-        static string format_filesize(long filesize_bytes)
+        static string format_filesize(long filesize_bytes) // not using this right now, keeping just in case. 
         {
             long filesize_kb = filesize_bytes / 1024;
             if (filesize_kb < 1000)
@@ -304,7 +304,7 @@ namespace ContentScanner
     }
 
     /// <summary>
-    /// class to help get MIME types of files based on their file extensions
+    /// class to get MIME types of files based on their file extensions
     /// source: Stack overflow comment by Jalal Aldeen Saa'd (http://stackoverflow.com/questions/58510/using-net-how-can-you-find-the-mime-type-of-a-file-based-on-the-file-signature)
     /// </summary>
     public static class MIMEAssistant
