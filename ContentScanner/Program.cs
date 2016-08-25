@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -10,70 +12,185 @@ namespace ContentScanner
     {
         static void Main()
         {
-            Console.WriteLine("Content Scanner v0.4");
-            Console.WriteLine("Press any key to start the scan\n");
-
-            Console.ReadKey();
+            Console.WriteLine("Content Scanner v0.6");
 
             //get current directory
             string path = Directory.GetCurrentDirectory();
 
-            // get output filepath
-            string output_filename = "content-scan-results.txt";
-            string output_file = path + @"\" + output_filename;
+            while (true)
+            {
+                Console.Write("\nAvailable commands are 'scan', 'map', and 'quit': ");
+
+                // timestamp for error file
+                string timestamp = GetTimestamp(DateTime.Now);
+
+                // get output filepath
+                string output_filename = "content-scan-results-" + timestamp + ".txt";
+                string output_file = path + @"\" + output_filename;
+
+                // get error tracker filepath
+                string error_filename = "content-scan-errors-" + timestamp + ".txt";
+                string error_file = path + @"\" + error_filename;
+
+                // get mapping template filepath
+                string mapping_filename = "content-scan-mapping-" + timestamp + ".txt";
+                string mapping_file = path + @"\" + mapping_filename;
+
+                string command = Console.ReadLine();
+
+                if (command == "scan")
+                {
+                    try
+                    {
+
+                        // open output files
+                        StreamWriter output = File.CreateText(output_file);
+                        StreamWriter errors = File.CreateText(error_file);
+
+                        // add columns to output files
+                        output.WriteLine("Filename\tMIME Type\tPath\tSize\tLast Modified\tLast Accessed\tCreate Date\tOwner Account");
+                        errors.WriteLine("dir\terror");
+
+                        // start object count
+                        Console.WriteLine("Starting object count...\n");
+                        int progress_total = GetProgressTotal(errors, path);
+                        Console.WriteLine("\nObject count complete: {0} total objects.\n", progress_total);
+                        int progress = 0;
+
+                        // start scan
+                        Console.WriteLine("Starting scan...");
+                        var progress_bar = new ProgressBar();
+
+                        Scanner(output, errors, path, progress_total, ref progress, progress_bar);
+
+                        // end scan
+                        progress_bar.Dispose();
+
+                        Console.WriteLine("Scan complete. {0} objects processed. Output files shown below:", progress_total);
+                        Console.WriteLine("\n\tScan results: content-scan-results-{0}.txt\n\tErrors (if any): content-scan-errors-{0}.txt", timestamp);
+
+                        // clean up streamwriters. If these aren't here the last few lines tend to get cut off. 
+                        output.Flush();
+                        output.Close();
+
+                        errors.Flush();
+                        errors.Close();
+                    }
+                    catch (UnauthorizedAccessException uae)
+                    {
+                        Console.WriteLine("Insufficient permissions to write output files in this directory.\nTerminating scan.\n");
+                        ErrorViewer(uae.ToString());
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("The process failed.");
+                        ErrorViewer(e.ToString());
+                    }
+                }
+                else if (command == "map")
+                {
+                    try
+                    {
+
+                        // open output files
+                        StreamWriter mapping = File.CreateText(mapping_file);
+                        StreamWriter errors = File.CreateText(error_file);
+
+                        // add columns to output files
+                        mapping.WriteLine("L1\tL2\tL3\tL4\tL5\tL6\tL7\tL8\t");
+                        errors.WriteLine("dir\terror");
+
+                        // start object count
+                        Console.WriteLine("Starting object count...\n");
+                        int progress_total = GetProgressTotal(errors, path);
+                        Console.WriteLine("\nObject count complete: {0} total objects.\n", progress_total);
+                        int progress = 0;
+
+                        // start scan
+                        Console.WriteLine("Starting mapping...");
+                        var progress_bar = new ProgressBar();
+
+                        Mapper(mapping, errors, path, progress_total, ref progress, progress_bar, 0);
+
+                        // end scan
+                        progress_bar.Dispose();
+
+                        Console.WriteLine("Mapping complete. {0} objects processed. Output files shown below:", progress_total);
+                        Console.WriteLine("\n\tMapping results: content-scan-mapping-{0}.txt\n\tErrors (if any): content-scan-errors-{0}.txt", timestamp);
+
+                        // clean up streamwriters. If these aren't here the last few lines tend to get cut off. 
+                        mapping.Flush();
+                        mapping.Close();
+
+                        errors.Flush();
+                        errors.Close();
+                    }
+                    catch (UnauthorizedAccessException uae)
+                    {
+                        Console.WriteLine("Insufficient permissions to write output files in this directory.\nTerminating scan.\n");
+                        ErrorViewer(uae.ToString());
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("The process failed.");
+                        ErrorViewer(e.ToString());
+                    }
+                }
+                else if (command == "quit")
+                {
+                    break;
+                }
+                else
+                {
+                    Console.WriteLine("Please enter a valid command.");
+                }
+            }
+        }
+
+        static void Mapper(StreamWriter mapping, StreamWriter errors, string current_dir, int progress_total, ref int progress, ProgressBar progress_bar, int depth)
+        {
+            string depth_tabs = "";
+            for (int i = 0; i < depth; i++)
+            {
+                depth_tabs = depth_tabs + "\t";
+            }
+
+            depth++;
+
+            string dir_name = new DirectoryInfo(current_dir).Name; 
+
+            // write dir name
+            mapping.WriteLine("{0}{1}", depth_tabs, current_dir);
+
             
-            // get error tracker filepath
-            string error_filename = "content-scan-errors.txt";
-            string error_file = path + @"\" + error_filename;
+            // get subdirs
+            string[] dirs = Directory.GetDirectories(current_dir, "*", SearchOption.TopDirectoryOnly);
 
-            try
+            // recurse for each subdir
+            foreach (string dir in dirs)
             {
-                // open output files
-                StreamWriter output = File.CreateText(output_file);
-                StreamWriter errors = File.CreateText(error_file);
+                try // check for errors, output to error file if any
+                {
+                    progress++;
+                    progress_bar.Report((double)progress / progress_total);
 
-                // add columns to output files
-                output.WriteLine("Filename\tMIME Type\tPath\tSize\tLast Modified\tLast Accessed\tCreate Date\tOwner Account");
-                errors.WriteLine("dir\terror");
+                    // recurse!
+                    Mapper(mapping, errors, dir, progress_total, ref progress, progress_bar, depth);
+                }
+                catch (Exception e)
+                {
+                    progress++;
+                    progress_bar.Report((double)progress / progress_total);
 
-                // start object count
-                Console.WriteLine("Starting object count...\n");
-                int progress_total = GetProgressTotal(errors, path);
-                Console.WriteLine("\nObject count complete: {0} total objects.\n", progress_total);
-                int progress = 0;
-
-                // start scan
-                Console.WriteLine("Starting scan...");
-                var progress_bar = new ProgressBar();
-
-                Scanner(output, errors, path, progress_total, ref progress, progress_bar);
-
-
-                // end scan
-                progress_bar.Dispose();
-
-                Console.WriteLine("Scan complete. {0} objects processed.", progress_total);
-                Console.WriteLine("Press any key to exit.");
-
-                Console.Read();
-
-                // clean up streamwriters. If these aren't here the last few lines tend to get cut off. 
-                output.Flush();
-                output.Close();
-
-                errors.Flush();
-                errors.Close();
+                    errors.WriteLine("{0}\t{1}", dir, e.ToString());
+                }
             }
-            catch (UnauthorizedAccessException uae)
-            {
-                Console.WriteLine("Insufficient permissions to write output files in this directory.\nTerminating scan.\n");
-                ErrorViewer(uae.ToString());
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("The process failed.");
-                ErrorViewer(e.ToString());
-            }
+        }
+
+
+        public static String GetTimestamp(DateTime value)
+        {
+            return value.ToString("yyyyMMddHHmmssfff");
         }
 
         /// <summary>
