@@ -1,10 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace ContentScanner
 {
@@ -20,33 +18,38 @@ namespace ContentScanner
             //get current directory
             string path = Directory.GetCurrentDirectory();
 
-            // use for testing
-            // string path = @"C:\Users\Eugene\Desktop\beats";
-
+            // get output filepath
             string output_filename = "content-scan-results.txt";
             string output_file = path + @"\" + output_filename;
-
+            
+            // get error tracker filepath
             string error_filename = "content-scan-errors.txt";
             string error_file = path + @"\" + error_filename;
 
             try
             {
+                // open output files
                 StreamWriter output = File.CreateText(output_file);
                 StreamWriter errors = File.CreateText(error_file);
 
+                // add columns to output files
                 output.WriteLine("Filename\tMIME Type\tPath\tSize\tLast Modified\tLast Accessed\tCreate Date\tOwner Account");
                 errors.WriteLine("dir\terror");
 
+                // start object count
                 Console.WriteLine("Starting object count...\n");
                 int progress_total = GetProgressTotal(errors, path);
                 Console.WriteLine("\nObject count complete: {0} total objects.\n", progress_total);
                 int progress = 0;
 
+                // start scan
                 Console.WriteLine("Starting scan...");
                 var progress_bar = new ProgressBar();
 
                 Scanner(output, errors, path, progress_total, ref progress, progress_bar);
 
+
+                // end scan
                 progress_bar.Dispose();
 
                 Console.WriteLine("Scan complete. {0} objects processed.", progress_total);
@@ -64,22 +67,32 @@ namespace ContentScanner
             catch (UnauthorizedAccessException uae)
             {
                 Console.WriteLine("Insufficient permissions to write output files in this directory.\nTerminating scan.\n");
-                Console.Write("Press e to see the error details. Press any other key to exit: ");
-
-                if (Console.ReadKey().KeyChar == 'e')
-                {
-                    Console.WriteLine("\n" + uae.ToString());
-                    Console.ReadKey();
-                }
+                ErrorViewer(uae.ToString());
             }
             catch (Exception e)
             {
-                Console.WriteLine("The process failed: {0}\n", e.ToString());
-                Console.WriteLine("Press any key to exit.");
+                Console.WriteLine("The process failed.");
+                ErrorViewer(e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// optional viewer for full error messages. called on exception catches
+        /// </summary>
+        static void ErrorViewer(string error_msg)
+        {
+            Console.Write("Press 'e' to see the error details. Press any other key to exit: ");
+
+            if (Console.ReadKey().KeyChar == 'e')
+            {
+                Console.WriteLine("\n\n" + error_msg.ToString());
                 Console.ReadKey();
             }
         }
 
+        /// <summary>
+        /// main content scan function. recursively collects file info and writes to output and error log files
+        /// </summary>
         static void Scanner(StreamWriter output, StreamWriter errors, string current_dir, int progress_total, ref int progress, ProgressBar progress_bar)
         {
             // write dir name
