@@ -25,7 +25,7 @@ namespace ContentScanner
                 if (!Directory.Exists(output_folder))
                 {
                     // Try to create the directory.
-                    DirectoryInfo di = Directory.CreateDirectory(output_folder);
+                    Directory.CreateDirectory(output_folder);
                 }
             }
             catch (Exception e)
@@ -37,6 +37,8 @@ namespace ContentScanner
             while (true)
             {
                 Console.Write("\nAvailable commands are 'scan', 'map', and 'quit': ");
+
+                string command = Console.ReadLine();
 
                 // timestamp for error file
                 string timestamp = GetTimestamp(DateTime.Now);
@@ -52,8 +54,6 @@ namespace ContentScanner
                 // get mapping template filepath
                 string mapping_filename = "content-scan-mapping-" + timestamp + ".txt";
                 string mapping_file = output_folder + @"\" + mapping_filename;
-
-                string command = Console.ReadLine();
 
                 if (command == "scan")
                 {
@@ -83,7 +83,7 @@ namespace ContentScanner
                         // end scan
                         progress_bar.Dispose();
 
-                        Console.WriteLine("Scan complete. {0} objects processed. Output files shown below:", progress_total);
+                        Console.WriteLine("Scan complete. {0} objects processed. Your output files can be found in the 'content-scan-outputs' folder:", progress_total);
                         Console.WriteLine("\n\tScan results: content-scan-results-{0}.txt\n\tErrors (if any): content-scan-errors-{0}.txt", timestamp);
 
                         // clean up streamwriters. If these aren't here the last few lines tend to get cut off. 
@@ -108,7 +108,6 @@ namespace ContentScanner
                 {
                     try
                     {
-
                         // open output files
                         StreamWriter mapping = File.CreateText(mapping_file);
                         StreamWriter errors = File.CreateText(error_file);
@@ -132,7 +131,7 @@ namespace ContentScanner
                         // end scan
                         progress_bar.Dispose();
 
-                        Console.WriteLine("Mapping complete. {0} objects processed. Output files shown below:", progress_total);
+                        Console.WriteLine("Mapping complete. {0} objects processed. Your output files can be found in the 'content-scan-outputs' folder:", progress_total);
                         Console.WriteLine("\n\tMapping results: content-scan-mapping-{0}.txt\n\tErrors (if any): content-scan-errors-{0}.txt", timestamp);
 
                         // clean up streamwriters. If these aren't here the last few lines tend to get cut off. 
