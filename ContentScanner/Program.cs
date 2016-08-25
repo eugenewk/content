@@ -17,6 +17,23 @@ namespace ContentScanner
             //get current directory
             string path = Directory.GetCurrentDirectory();
 
+            string output_folder = path + @"\content-scanner-outputs";
+
+            try
+            {
+                // Determine whether the directory exists.
+                if (!Directory.Exists(output_folder))
+                {
+                    // Try to create the directory.
+                    DirectoryInfo di = Directory.CreateDirectory(output_folder);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Unable to create output directory.");
+                ErrorViewer(e.ToString());
+            }
+
             while (true)
             {
                 Console.Write("\nAvailable commands are 'scan', 'map', and 'quit': ");
@@ -26,15 +43,15 @@ namespace ContentScanner
 
                 // get output filepath
                 string output_filename = "content-scan-results-" + timestamp + ".txt";
-                string output_file = path + @"\" + output_filename;
+                string output_file = output_folder + @"\" + output_filename;
 
                 // get error tracker filepath
                 string error_filename = "content-scan-errors-" + timestamp + ".txt";
-                string error_file = path + @"\" + error_filename;
+                string error_file = output_folder + @"\" + error_filename;
 
                 // get mapping template filepath
                 string mapping_filename = "content-scan-mapping-" + timestamp + ".txt";
-                string mapping_file = path + @"\" + mapping_filename;
+                string mapping_file = output_folder + @"\" + mapping_filename;
 
                 string command = Console.ReadLine();
 
@@ -53,7 +70,7 @@ namespace ContentScanner
 
                         // start object count
                         Console.WriteLine("Starting object count...\n");
-                        int progress_total = GetProgressTotal(errors, path);
+                        int progress_total = GetProgressTotalFiles(errors, path);
                         Console.WriteLine("\nObject count complete: {0} total objects.\n", progress_total);
                         int progress = 0;
 
@@ -102,7 +119,7 @@ namespace ContentScanner
 
                         // start object count
                         Console.WriteLine("Starting object count...\n");
-                        int progress_total = GetProgressTotal(errors, path);
+                        int progress_total = GetProgressTotalFolders(errors, path);
                         Console.WriteLine("\nObject count complete: {0} total objects.\n", progress_total);
                         int progress = 0;
 
@@ -157,12 +174,12 @@ namespace ContentScanner
 
             depth++;
 
-            string dir_name = new DirectoryInfo(current_dir).Name; 
+            string dir_name = new DirectoryInfo(current_dir).Name;
 
             // write dir name
             mapping.WriteLine("{0}{1}", depth_tabs, current_dir);
 
-            
+
             // get subdirs
             string[] dirs = Directory.GetDirectories(current_dir, "*", SearchOption.TopDirectoryOnly);
 
@@ -224,7 +241,7 @@ namespace ContentScanner
                 try // check for errors, output to error file if any
                 {
                     progress++;
-                    progress_bar.Report((double) progress / progress_total);
+                    progress_bar.Report((double)progress / progress_total);
 
                     // get file attributes
 
@@ -253,7 +270,7 @@ namespace ContentScanner
                 catch (Exception e)
                 {
                     progress++;
-                    progress_bar.Report((double) progress / progress_total);
+                    progress_bar.Report((double)progress / progress_total);
 
                     errors.WriteLine("{0}\t{1}", current_dir, e.ToString());
                 }
@@ -268,7 +285,7 @@ namespace ContentScanner
                 try // check for errors, output to error file if any
                 {
                     progress++;
-                    progress_bar.Report((double) progress / progress_total);
+                    progress_bar.Report((double)progress / progress_total);
 
                     // recurse!
                     Scanner(output, errors, dir, progress_total, ref progress, progress_bar);
@@ -276,16 +293,16 @@ namespace ContentScanner
                 catch (Exception e)
                 {
                     progress++;
-                    progress_bar.Report((double) progress / progress_total);
+                    progress_bar.Report((double)progress / progress_total);
 
                     errors.WriteLine("{0}\t{1}", dir, e.ToString());
                 }
             }
         }
-        
-        static int GetProgressTotal(StreamWriter errors, string path)
+
+        static int GetProgressTotalFiles(StreamWriter errors, string path)
         {
-            
+
             try // get file totals for progress bar
             {
                 int total_files = Directory.GetFiles(path, "*", SearchOption.TopDirectoryOnly).Length;
@@ -295,7 +312,7 @@ namespace ContentScanner
 
                 foreach (string dir in dirs)
                 {
-                    total_dirs = total_dirs + GetProgressTotal(errors, dir);
+                    total_dirs = total_dirs + GetProgressTotalFiles(errors, dir);
                 }
 
                 return total_dirs + total_files;
@@ -308,6 +325,32 @@ namespace ContentScanner
                 return 1;
             }
         }
+
+        static int GetProgressTotalFolders(StreamWriter errors, string path)
+        {
+
+            try // get file totals for progress bar
+            {
+                string[] dirs = Directory.GetDirectories(path, "*", SearchOption.TopDirectoryOnly);
+
+                int total_dirs = dirs.Length;
+
+                foreach (string dir in dirs)
+                {
+                    total_dirs = total_dirs + GetProgressTotalFolders(errors, dir);
+                }
+
+                return total_dirs;
+            }
+            catch (Exception e)
+            {
+                //Console.WriteLine("Progress bar encountered an error: {0}", e.ToString());
+                errors.WriteLine("FileCounter\t{0}", e.ToString());
+                Console.WriteLine("Unable to access {0}", path);
+                return 1;
+            }
+        }
+
 
         static string format_filesize(long filesize_bytes) // not using this right now, keeping just in case. 
         {
@@ -330,7 +373,7 @@ namespace ContentScanner
             }
 
             return ">1TB";
-        } 
+        }
     }
 
     /// <summary>
