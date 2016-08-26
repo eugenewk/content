@@ -5,8 +5,16 @@ using System.Runtime.InteropServices;
 
 namespace ContentScanner
 {
+    /// <summary>
+    /// This class provides the Scanner and Mapper classes with the basic equipment for conducting filescans:
+    /// - output files and folders
+    /// - the base directory
+    /// - timestamp
+    /// - progress bar and progress counter
+    /// - dispose function
+    /// </summary>
     public class DivingGear : IDisposable
-    {
+    { 
         private StreamWriter output;
         private StreamWriter errors;
         private string current_dir = Directory.GetCurrentDirectory();
@@ -19,7 +27,7 @@ namespace ContentScanner
 
         //initialized on startup
         private string timestamp;
-        private int progress;
+        public int progress;
         private ProgressBar progress_bar;
 
         

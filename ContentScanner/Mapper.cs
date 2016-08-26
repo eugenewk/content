@@ -49,7 +49,7 @@ namespace ContentScanner
             Console.WriteLine("Starting mapping...");
             ProgressBar = new ProgressBar();
             Output.WriteLine("L1\tL2\tL3\tL4\tL5\tL6\tL7\tL8\t");
-            Map(depth, BaseDir, Progress);
+            Map(depth, BaseDir, ref progress);
 
             ProgressBar.Dispose();
 
@@ -66,7 +66,7 @@ namespace ContentScanner
             Dispose();
         }
 
-        private void Map(int depth, string path, int progress)
+        private void Map(int depth, string path, ref int progress)
         {
             string depth_tabs = "";
             for (int i = 0; i < depth; i++)
@@ -91,10 +91,10 @@ namespace ContentScanner
                 try // check for errors, output to error file if any
                 {
                     progress++;
-                    ProgressBar.Report((double)Progress / progress_total);
+                    ProgressBar.Report((double)progress / progress_total);
 
                     // recurse!
-                    Map(depth, dir, progress);
+                    Map(depth, dir, ref progress);
                 }
                 catch (Exception e)
                 {

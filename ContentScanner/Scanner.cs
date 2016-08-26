@@ -6,6 +6,7 @@ namespace ContentScanner
     class Scanner : DivingGear
     {
         int progress_total;
+        int cur_progress;
         string output_file;
         string error_file;
         string output_filename;
@@ -19,6 +20,8 @@ namespace ContentScanner
             error_filename = e_format + TimeStamp + ".txt";
             output_file = OutputFolder + @"\" + output_filename;
             error_file = OutputFolder + @"\" + error_filename;
+
+            cur_progress = progress;
 
             try
             {
@@ -47,7 +50,7 @@ namespace ContentScanner
             ProgressBar = new ProgressBar();
             Output.WriteLine("Filename\tMIME Type\tPath\tSize\tLast Modified\tLast Accessed\tCreate Date\tOwner Account");
             Errors.WriteLine("dir\terror");
-            Scan(BaseDir, Progress);
+            Scan(BaseDir, ref cur_progress);
 
             ProgressBar.Dispose();
 
@@ -64,7 +67,7 @@ namespace ContentScanner
             Dispose();
         }
 
-        private void Scan(string path, int progress)
+        private void Scan(string path, ref int progress)
         {
             string dir_name = new DirectoryInfo(path).Name;
 
@@ -127,7 +130,7 @@ namespace ContentScanner
                     ProgressBar.Report((double)progress / progress_total);
 
                     // recurse!
-                    Scan(dir, progress);
+                    Scan(dir, ref progress);
                 }
                 catch (Exception e)
                 {

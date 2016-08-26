@@ -22,10 +22,14 @@ namespace ContentScanner
                 if (command == "scan")
                 {
                     new Scanner();
+                    // the constructor for this class executes the scan
+                    // see Scanner.cs for class definition
                 }
                 else if (command == "map")
                 {
                     new Mapper();
+                    // the constructor for this class executes the scan
+                    // see Mapper.cs for class definition
                 }
                 else if (command == "help")
                 {
