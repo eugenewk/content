@@ -12,7 +12,12 @@ namespace ContentScanner
     {
         static void Main()
         {
-            Console.WriteLine("Content Scanner v0.6");
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("======================");
+            Console.WriteLine(" Content Scanner v0.7 ");
+            Console.WriteLine("======================");
+            Console.ForegroundColor = ConsoleColor.White;
+            Help();
 
             //get current directory
             string path = Directory.GetCurrentDirectory();
@@ -36,8 +41,7 @@ namespace ContentScanner
 
             while (true)
             {
-                Console.Write("\nAvailable commands are 'scan', 'map', and 'quit': ");
-
+                Console.Write("\ncontent-scanner> ");
                 string command = Console.ReadLine();
 
                 // timestamp for error file
@@ -69,7 +73,7 @@ namespace ContentScanner
                         errors.WriteLine("dir\terror");
 
                         // start object count
-                        Console.WriteLine("Starting object count...\n");
+                        Console.WriteLine("\nStarting object count...");
                         int progress_total = GetProgressTotalFiles(errors, path);
                         Console.WriteLine("\nObject count complete: {0} total objects.\n", progress_total);
                         int progress = 0;
@@ -83,7 +87,7 @@ namespace ContentScanner
                         // end scan
                         progress_bar.Dispose();
 
-                        Console.WriteLine("Scan complete. {0} objects processed. Your output files can be found in the 'content-scan-outputs' folder:", progress_total);
+                        Console.WriteLine("\nScan complete. {0} objects processed. Your output files can be found in the 'content-scan-outputs' folder:", progress_total);
                         Console.WriteLine("\n\tScan results: content-scan-results-{0}.txt\n\tErrors (if any): content-scan-errors-{0}.txt", timestamp);
 
                         // clean up streamwriters. If these aren't here the last few lines tend to get cut off. 
@@ -117,7 +121,7 @@ namespace ContentScanner
                         errors.WriteLine("dir\terror");
 
                         // start object count
-                        Console.WriteLine("Starting object count...\n");
+                        Console.WriteLine("\nStarting object count...");
                         int progress_total = GetProgressTotalFolders(errors, path);
                         Console.WriteLine("\nObject count complete: {0} total objects.\n", progress_total);
                         int progress = 0;
@@ -151,6 +155,10 @@ namespace ContentScanner
                         Console.WriteLine("The process failed.");
                         ErrorViewer(e.ToString());
                     }
+                }
+                else if (command == "help")
+                {
+                    Help();
                 }
                 else if (command == "quit")
                 {
@@ -203,6 +211,14 @@ namespace ContentScanner
             }
         }
 
+        static void Help()
+        {
+            Console.WriteLine("\nAvailable commands:\n");
+            Console.WriteLine("'scan' outputs list of all subdirectories and files");
+            Console.WriteLine("'map' outputs indented folder taxonomy");
+            Console.WriteLine("'help' brings up this menu");
+            Console.WriteLine("'quit'...quits");
+        }
 
         public static String GetTimestamp(DateTime value)
         {
