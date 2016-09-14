@@ -16,7 +16,7 @@ namespace ContentScanner
 
             while (true)
             {
-                Console.Write("\ncontent-scanner> ");
+                Console.Write("\ncontent-scanner>");
                 string command = Console.ReadLine();
 
                 if (command == "scan")
